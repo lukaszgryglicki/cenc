@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
 
 int dialect(int c) {
   int u;
@@ -271,17 +272,37 @@ int next(int c) {
   return c;
 }
 
-int main() {
-  int c, i, j, l, n;
+void getpass(char *password) {
+  static struct termios old, new;
+  tcgetattr(0, &old);
+  new = old;
+  new.c_lflag &= ~(ECHO);
+  tcsetattr(0, TCSANOW, &new);
+  if (fgets(password, BUFSIZ, stdin) == NULL) {
+    password[0] = '\0';
+  } else {
+    password[strlen(password)-1] = '\0';
+  }
+  tcsetattr(0, TCSANOW, &old);
+}
+
+int main(int argc, char** argv) {
+  int c, i, j, l, n, fin;
   int (*f)(int);
   char *s, *cs;
   unsigned int *pass, p;
+  FILE* in;
+  in = stdin;
   s = getenv("PASS");
   if (!s || (s && !strcmp(s, ""))) {
     if (!s) {
-      s = (char*)malloc(2*sizeof(char));
+      printf("password: ");
+      s = (char*)malloc(BUFSIZ*sizeof(char));
+      getpass(s);
+      printf("\n");
+    } else {
+      strcpy(s, "1");
     }
-    strcpy(s, "1");
   }
   l = strlen(s);
   pass = (unsigned int*)malloc(l*sizeof(unsigned int));
@@ -306,7 +327,16 @@ int main() {
     }
   }
   i = 0;
-  while ((c = fgetc(stdin)) != EOF) {
+  fin = 0;
+  if (argc > 1) {
+    in = fopen(argv[1], "r");
+    if (!in) {
+      printf("cannot open file: %s\n", argv[1]);
+      return 2;
+    }
+    fin = 1;
+  }
+  while ((c = fgetc(in)) != EOF) {
     n = pass[i];
     for (j=0;j<n;j++) {
       c = f(c);
@@ -316,6 +346,9 @@ int main() {
       i = 0;
     }
     fputc(c, stdout);
+  }
+  if (fin == 1) {
+    fclose(in);
   }
   return 0;
 }
