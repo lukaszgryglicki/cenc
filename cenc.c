@@ -296,13 +296,13 @@ int main() {
     }
     pass[i] = p;
   }
-  f = &next;
+  f = &dialect;
   s = getenv("F");
   if (s) {
-    if (!strcmp(s, "d")) {
-      f = &dialect;
-    } else if (!strcmp(s, "s")) {
+    if (!strcmp(s, "s")) {
       f = &shift;
+    } else if (!strcmp(s, "n")) {
+      f = &next;
     }
   }
   i = 0;
