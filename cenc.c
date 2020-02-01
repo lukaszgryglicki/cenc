@@ -272,9 +272,30 @@ int next(int c) {
 }
 
 int main() {
-  int c;
+  int c, i, j, l, n;
   int (*f)(int);
-  char* s;
+  char *s, *cs;
+  unsigned int *pass, p;
+  s = getenv("PASS");
+  if (!s || (s && !strcmp(s, ""))) {
+    if (!s) {
+      s = (char*)malloc(2*sizeof(char));
+    }
+    strcpy(s, "1");
+  }
+  l = strlen(s);
+  pass = (unsigned int*)malloc(l*sizeof(unsigned int));
+  cs = (char*)malloc(2*sizeof(char));
+  cs[1] = 0;
+  for (i=0;i<l;i++) {
+    cs[0] = s[i];
+    n = sscanf(cs, "%x", &p);
+    if (n == 0) {
+      printf("non-hex character #%d '%c' in %s\n", i, s[i], s);
+      return 1;
+    }
+    pass[i] = p;
+  }
   f = &next;
   s = getenv("F");
   if (s) {
@@ -284,8 +305,16 @@ int main() {
       f = &shift;
     }
   }
+  i = 0;
   while ((c = fgetc(stdin)) != EOF) {
-    c = f(c);
+    n = pass[i];
+    for (j=0;j<n;j++) {
+      c = f(c);
+    }
+    i ++;
+    if (i == l) {
+      i = 0;
+    }
     fputc(c, stdout);
   }
   return 0;
